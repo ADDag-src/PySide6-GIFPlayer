@@ -30,5 +30,11 @@ pyinstaller --name=GIFPlayer --onefile --noconsole --icon="icons/gif-icon.ico" -
 
 ```
 
+Linux(Tested)/Mac(Not tested)
+
+```
+pyinstaller --name=GIFPlayer --onefile --windowed --icon=icons/gif-icon.png --add-data "icons/*.ico:icons" --add-data "layout/*.py:layout" main.py
+```
+
 ## Icon Attribution
 The GIF file icon used in this project was sourced from [UXWing](https://uxwing.com/file-gif-color-red-icon/). Thank you!
