@@ -139,6 +139,8 @@ class MainWindow(QMainWindow):
                 pass
 
     def gen_gif_file_list(self):
+        if not self.current_folder or not os.path.isdir(self.current_folder):
+            return
         gif_files = [file for file in os.listdir(self.current_folder) if file.lower().endswith(".gif")]
         self.gif_paths_list = [os.path.normpath(os.path.join(self.current_folder, file_name)) for file_name in gif_files]
 
@@ -188,7 +190,7 @@ class MainWindow(QMainWindow):
     def apply_gif(self, file_path):
         self.current_image_path = os.path.normpath(file_path)
         if not file_path.lower().endswith(".gif") or not os.path.exists(file_path):
-            self.main_display.setText("Invalid GIF file")
+            self.main_display.setText("Invalid GIF file or no GIF selected")
             return
 
         if self.main_display.movie():
@@ -217,9 +219,10 @@ class MainWindow(QMainWindow):
             self.button_reset.setDisabled(False)
             self.button_next.setDisabled(False)
             self.button_prev.setDisabled(False)
+            self.button_pause.setText("Pause")
             self.apply_gif_speed()
         else:
-            self.main_display.setText("Invalid GIF file")
+            self.main_display.setText("Invalid GIF file or no GIF selected")
 
     # ----------------|method used to reset the speed when opening new files, used with small delay|--------------- #
     def apply_gif_speed(self):
