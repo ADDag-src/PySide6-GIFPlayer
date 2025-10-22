@@ -5,9 +5,11 @@ A lightweight desktop app for viewing animated GIFs, built with PySide6.
 ## Features
 
 - Play/pause animated GIFs.
+- Next/previous navigation to cycle through GIFs in same folder.
 - Control playback speed, including a reset-to-default button.
 - Dynamically scale GIFs when resizing the window — preserves original aspect ratio.
 - Can be set as the default program for opening `.gif` files.
+
 
 ## Screenshot
 
