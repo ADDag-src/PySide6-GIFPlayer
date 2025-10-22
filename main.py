@@ -19,6 +19,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("GIF Player")
         self.setStyleSheet("background-color: #31363F;")
         self.gif_loaded = False
+        self.current_folder = ""
+        self.current_image_path = ""
+        self.gif_paths_list = ""
         # -------------------------|Icon path handling for packaging|------------------------- #
         if hasattr(sys, "_MEIPASS"):
             base_path = sys._MEIPASS
@@ -35,6 +38,8 @@ class MainWindow(QMainWindow):
         self.speed_slider = widgets["speed_slider"]
         self.button_pause = widgets["button_pause"]
         self.button_reset = widgets["button_reset"]
+        self.button_next = widgets["button_next"]
+        self.button_prev = widgets["button_prev"]
         self.gif_layout = widgets["gif_layout"]
         self.main_display = widgets["main_display"]
         menu_bar = setup_menu_bar(self, self.load_gif)
@@ -44,9 +49,14 @@ class MainWindow(QMainWindow):
         self.speed_slider.valueChanged.connect(self.speed_control)
         self.button_pause.clicked.connect(self.pause_clicked)
         self.button_reset.clicked.connect(self.reset_speed)
+        self.button_next.clicked.connect(self.next_clicked)
+        self.button_prev.clicked.connect(self.prev_clicked)
 
         # -------------------------|logic for playing gif or otherwise showing open option|------------------------- #
         if image_path.lower().endswith(".gif") and os.path.exists(image_path):
+            self.current_folder = os.path.dirname(image_path)
+            self.current_image_path = image_path
+            self.gen_gif_file_list()
             self.gif_image = QMovie(image_path)
             self.gif_image.jumpToFrame(0)
             self.gif_dimensions = self.gif_image.frameRect().size()
@@ -61,11 +71,22 @@ class MainWindow(QMainWindow):
             self.speed_slider.setDisabled(True)
             self.button_pause.setDisabled(True)
             self.button_reset.setDisabled(True)
+            self.button_next.setDisabled(True)
+            self.button_prev.setDisabled(True)
 
             self.main_display.setText("No gif loaded")
 
             self.load_button = QPushButton("📂 Open GIF")
-            self.load_button.setStyleSheet("color: white; background-color: #3d99f5; font-size: 15px;")
+            self.load_button.setStyleSheet("""
+                                            QPushButton {
+                                                color: white;
+                                                background-color: #3d99f5;
+                                                font-size: 15px;
+                                            }
+                                            QPushButton:hover {
+                                                background-color: #2b7cd3;
+                                            }
+                                        """)
             self.load_button.clicked.connect(self.load_gif)
 
             self.gif_layout.addWidget(self.main_display)
@@ -96,6 +117,30 @@ class MainWindow(QMainWindow):
         else:
             self.gif_image.setPaused(False)
             self.button_pause.setText("Pause")
+
+    def prev_clicked(self):
+        self.current_image_path = os.path.normpath(self.current_image_path)
+        if len(self.gif_paths_list) > 1:
+            try:
+                index = self.gif_paths_list.index(self.current_image_path)
+                prev_index = (index - 1) % len(self.gif_paths_list)
+                self.apply_gif(self.gif_paths_list[prev_index])
+            except ValueError:
+                pass
+
+    def next_clicked(self):
+        self.current_image_path = os.path.normpath(self.current_image_path)
+        if len(self.gif_paths_list) > 1:
+            try:
+                index = self.gif_paths_list.index(self.current_image_path)
+                next_index = (index + 1) % len(self.gif_paths_list)
+                self.apply_gif(self.gif_paths_list[next_index])
+            except ValueError:
+                pass
+
+    def gen_gif_file_list(self):
+        gif_files = [file for file in os.listdir(self.current_folder) if file.lower().endswith(".gif")]
+        self.gif_paths_list = [os.path.normpath(os.path.join(self.current_folder, file_name)) for file_name in gif_files]
 
     # -------------------------|method to maintain gif scale when window resizes|------------------------- #
     def update_gif_scale(self):
@@ -128,34 +173,53 @@ class MainWindow(QMainWindow):
         super().showEvent(event)
         self.update_gif_scale()
 
-    # -------------------------|method to load gif and make sure its valid|------------------------- #
+    # -------------------------|method to load gif and apply to main display|------------------------- #
     def load_gif(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Open GIF", "", "GIF Files (*.gif)")
+        file_path = os.path.normpath(file_path)
         if file_path:
-            if self.main_display.movie():
-                self.main_display.movie().stop()
-                self.main_display.clear()
-            self.gif_image = QMovie(file_path)
-            if self.gif_image.isValid():
-                self.gif_image.jumpToFrame(0)
-                self.gif_dimensions = self.gif_image.frameRect().size()
-                self.main_display.setMovie(self.gif_image)
-                self.gif_image.start()
-                self.main_display.adjustSize()
-                self.main_display.updateGeometry()
-                self.layout.activate()
-                self.update_gif_scale()
-                self.resize(self.size())
-                self.gif_loaded = True
-                if hasattr(self, "load_button"):
-                    self.load_button.hide()
-                self.speed_slider.setDisabled(False)
-                self.button_pause.setDisabled(False)
-                self.button_reset.setDisabled(False)
-                self.apply_gif_speed()
+            self.apply_gif(file_path)
+            self.current_folder = os.path.dirname(file_path)
+            self.current_image_path = file_path
+            self.setWindowTitle(f"GIF Player - {os.path.basename(self.current_image_path)}")
+            self.gen_gif_file_list()
 
-            else:
-                self.main_display.setText("Invalid GIF file")
+    # ----------------|method to apply a gif to the main display|--------------- #
+    def apply_gif(self, file_path):
+        self.current_image_path = os.path.normpath(file_path)
+        if not file_path.lower().endswith(".gif") or not os.path.exists(file_path):
+            self.main_display.setText("Invalid GIF file")
+            return
+
+        if self.main_display.movie():
+            self.main_display.movie().stop()
+            self.main_display.clear()
+
+        self.gif_image = QMovie(file_path)
+        if self.gif_image.isValid():
+            self.gif_image.jumpToFrame(0)
+            self.gif_dimensions = self.gif_image.frameRect().size()
+            self.main_display.setMovie(self.gif_image)
+            self.gif_image.start()
+            self.main_display.adjustSize()
+            self.main_display.updateGeometry()
+            self.layout.activate()
+            self.update_gif_scale()
+            self.resize(self.size())
+            self.gif_loaded = True
+            self.setWindowTitle(f"GIF Player - {os.path.basename(self.current_image_path)}")
+
+            if hasattr(self, "load_button"):
+                self.load_button.hide()
+
+            self.speed_slider.setDisabled(False)
+            self.button_pause.setDisabled(False)
+            self.button_reset.setDisabled(False)
+            self.button_next.setDisabled(False)
+            self.button_prev.setDisabled(False)
+            self.apply_gif_speed()
+        else:
+            self.main_display.setText("Invalid GIF file")
 
     # ----------------|method used to reset the speed when opening new files, used with small delay|--------------- #
     def apply_gif_speed(self):

@@ -25,6 +25,12 @@ def build_ui():
     button_reset = QPushButton("Reset Speed")
     button_reset.setStyleSheet("color: white; background-color: #3d99f5; font-size: 15px;")
 
+    button_next = QPushButton("Next")
+    button_next.setStyleSheet("color: white; background-color: #3d99f5; font-size: 15px;")
+
+    button_prev = QPushButton("Prev")
+    button_prev.setStyleSheet("color: white; background-color: #3d99f5; font-size: 15px;")
+
     # -------------------------|creating inner layout and adding widgets|------------------------- #
     inner_layout = QHBoxLayout(inner_buttons)
     inner_layout.setSpacing(30)
@@ -32,6 +38,8 @@ def build_ui():
     inner_layout.addWidget(speed_slider)
     inner_layout.addWidget(button_pause)
     inner_layout.addWidget(button_reset)
+    inner_layout.addWidget(button_prev)
+    inner_layout.addWidget(button_next)
     inner_layout.setContentsMargins(20, 20, 20, 20)
     inner_layout.setSizeConstraint(QLayout.SetMinimumSize)
 
@@ -59,6 +67,8 @@ def build_ui():
         "speed_slider": speed_slider,
         "button_pause": button_pause,
         "button_reset": button_reset,
+        "button_next": button_next,
+        "button_prev": button_prev,
         "gif_layout": gif_layout,
         "main_display": main_display
     }
